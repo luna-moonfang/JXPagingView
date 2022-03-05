@@ -9,9 +9,11 @@
 #import "JXPagerListContainerView.h"
 #import <objc/runtime.h>
 
+// 处理嵌套时滑动
 @interface JXPagerListContainerScrollView: UIScrollView <UIGestureRecognizerDelegate>
 @property (nonatomic, assign, getter=isCategoryNestPagingEnabled) BOOL categoryNestPagingEnabled;
 @end
+
 @implementation JXPagerListContainerScrollView
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
     if (self.isCategoryNestPagingEnabled) {
@@ -59,6 +61,7 @@
 }
 @end
 
+/// 假vc,借它触发view appear等声明周期方法
 @interface JXPagerListContainerViewController : UIViewController
 @property (copy) void(^viewWillAppearBlock)(void);
 @property (copy) void(^viewDidAppearBlock)(void);
@@ -90,18 +93,20 @@
     [super viewDidDisappear:animated];
     self.viewDidDisappearBlock();
 }
+
+// 和beginAppearanceTransition配合使用, 由容器触发子vc的声明周期方法
 - (BOOL)shouldAutomaticallyForwardAppearanceMethods { return NO; }
 @end
 
 @interface JXPagerListContainerView () <UIScrollViewDelegate, UICollectionViewDelegate, UICollectionViewDataSource>
-@property (nonatomic, weak) id<JXPagerListContainerViewDelegate> delegate;
+@property (nonatomic, weak) id<JXPagerListContainerViewDelegate> delegate; // pagerview实现, 或作为pagevc的vc实现
 @property (nonatomic, strong) UIScrollView *scrollView;
 @property (nonatomic, assign) NSInteger currentIndex;
 @property (nonatomic, strong) NSMutableDictionary <NSNumber *, id<JXPagerViewListViewDelegate>> *validListDict;
 @property (nonatomic, assign) NSInteger willAppearIndex;
 @property (nonatomic, assign) NSInteger willDisappearIndex;
 @property (nonatomic, strong) UICollectionView *collectionView;
-@property (nonatomic, strong) JXPagerListContainerViewController *containerVC;
+@property (nonatomic, strong) JXPagerListContainerViewController *containerVC; // 假vc
 @end
 
 @implementation JXPagerListContainerView
@@ -124,7 +129,7 @@
     _listCellBackgroundColor = [UIColor whiteColor];
     _containerVC = [[JXPagerListContainerViewController alloc] init];
     self.containerVC.view.backgroundColor = [UIColor clearColor];
-    [self addSubview:self.containerVC.view];
+    [self addSubview:self.containerVC.view]; // 透明
     __weak typeof(self) weakSelf = self;
     self.containerVC.viewWillAppearBlock = ^{
         [weakSelf listWillAppear:weakSelf.currentIndex];
@@ -142,6 +147,7 @@
         if (self.delegate &&
             [self.delegate respondsToSelector:@selector(scrollViewClassInlistContainerView:)] &&
             [[self.delegate scrollViewClassInlistContainerView:self] isKindOfClass:object_getClass([UIScrollView class])]) {
+            // 替换scrollview类处理滑动
             _scrollView = (UIScrollView *)[[[self.delegate scrollViewClassInlistContainerView:self] alloc] init];
         }else {
             _scrollView = [[JXPagerListContainerScrollView alloc] init];
@@ -208,7 +214,8 @@
 
     self.containerVC.view.frame = self.bounds;
     if (self.containerType == JXPagerListContainerType_ScrollView) {
-        if (CGRectEqualToRect(self.scrollView.frame, CGRectZero) ||  !CGSizeEqualToSize(self.scrollView.bounds.size, self.bounds.size)) {
+        if (CGRectEqualToRect(self.scrollView.frame, CGRectZero) ||
+            !CGSizeEqualToSize(self.scrollView.bounds.size, self.bounds.size)) {
             self.scrollView.frame = self.bounds;
             self.scrollView.contentSize = CGSizeMake(self.scrollView.bounds.size.width*[self.delegate numberOfListsInlistContainerView:self], self.scrollView.bounds.size.height);
             [_validListDict enumerateKeysAndObjectsUsingBlock:^(NSNumber * _Nonnull index, id<JXPagerViewListViewDelegate>  _Nonnull list, BOOL * _Nonnull stop) {
@@ -593,5 +600,3 @@
 }
 
 @end
-
-

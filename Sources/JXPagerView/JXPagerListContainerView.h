@@ -55,6 +55,7 @@ typedef NS_ENUM(NSUInteger, JXPagerListContainerType) {
     JXPagerListContainerType_CollectionView,
 };
 
+// JXPager实现
 @protocol JXPagerListContainerViewDelegate <NSObject>
 /**
  返回list的数量
@@ -102,7 +103,7 @@ typedef NS_ENUM(NSUInteger, JXPagerListContainerType) {
 @property (nonatomic, assign, readonly) JXPagerListContainerType containerType;
 @property (nonatomic, strong, readonly) UIScrollView *scrollView;
 @property (nonatomic, strong, readonly) NSDictionary <NSNumber *, id<JXPagerViewListViewDelegate>> *validListDict;   //已经加载过的列表字典。key是index，value是对应的列表
-@property (nonatomic, strong) UIColor *listCellBackgroundColor; //默认：[UIColor whiteColor]
+@property (nonatomic, strong) UIColor *listCellBackgroundColor; //默认：[UIColor whiteColor] // cell背景色
 /**
  滚动切换的时候，滚动距离超过一页的多少百分比，就触发列表的初始化。默认0.01（即列表显示了一点就触发加载）。范围0~1，开区间不包括0和1
  */
